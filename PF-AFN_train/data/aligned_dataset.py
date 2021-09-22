@@ -76,15 +76,15 @@ class AlignedDataset(BaseDataset):
         E_un = Image.open(E_un_path).convert('L')
         E_un_tensor = transform_A(E_un)
 
-        pose_name =B_path.replace('.png', '_keypoints.json').replace('.jpg','_keypoints.json').replace('train_img','train_pose')
+        pose_name =B_path.replace('.png', '.json').replace('.jpg','.json').replace('train_img','train_pose')
         with open(osp.join(pose_name), 'r') as f:
             pose_label = json.load(f)
             try:
-                pose_data = pose_label['people'][0]['pose_keypoints']
+                pose_data = pose_label['landmarks']
             except IndexError:
-                pose_data = [0 for i in range(54)]
+                pose_data = [0 for i in range(34)]
             pose_data = np.array(pose_data)
-            pose_data = pose_data.reshape((-1,3))
+            pose_data = pose_data.reshape((-1,2))
 
         point_num = pose_data.shape[0]
         pose_map = torch.zeros(point_num, self.fine_height, self.fine_width)

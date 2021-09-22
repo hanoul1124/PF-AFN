@@ -1,0 +1,23 @@
+
+mpython:S117"VRename this local variable "dir_A" to match the regular expression ^[_a-z][a-z0-9_]*$.(£ÿı
+mpython:S117"VRename this local variable "dir_B" to match the regular expression ^[_a-z][a-z0-9_]*$.(Ğ³Âº
+rpython:S117'"VRename this local variable "dir_C" to match the regular expression ^[_a-z][a-z0-9_]*$.(ãËÄ›ıÿÿÿÿ
+rpython:S117""VRename this local variable "dir_E" to match the regular expression ^[_a-z][a-z0-9_]*$.(Ã¿–òşÿÿÿÿ
+npython:S117."WRename this local variable "A_path" to match the regular expression ^[_a-z][a-z0-9_]*$.(ÍÊ•Ü
+upython:S1174"YRename this local variable "A_tensor" to match the regular expression ^[_a-z][a-z0-9_]*$.(Àşƒíúÿÿÿÿ
+spython:S1179"WRename this local variable "B_path" to match the regular expression ^[_a-z][a-z0-9_]*$.(½¹¨¯ûÿÿÿÿ
+upython:S117<"YRename this local variable "B_tensor" to match the regular expression ^[_a-z][a-z0-9_]*$.(Œ™²úÿÿÿÿ
+mpython:S117>"WRename this local variable "C_path" to match the regular expression ^[_a-z][a-z0-9_]*$.(—õV
+upython:S117@"YRename this local variable "C_tensor" to match the regular expression ^[_a-z][a-z0-9_]*$.(ÓÂÍŠÿÿÿÿÿ
+qpython:S117H"URename this local variable "C_un" to match the regular expression ^[_a-z][a-z0-9_]*$.(ÛªÀåüÿÿÿÿ
+qpython:S117G"ZRename this local variable "C_un_path" to match the regular expression ^[_a-z][a-z0-9_]*$.(‡“±•
+spython:S117I"\Rename this local variable "C_un_tensor" to match the regular expression ^[_a-z][a-z0-9_]*$.(Ê¿§‡
+npython:S117B"WRename this local variable "E_path" to match the regular expression ^[_a-z][a-z0-9_]*$.(àû·ñ
+upython:S117D"YRename this local variable "E_tensor" to match the regular expression ^[_a-z][a-z0-9_]*$.(æÍ’Ñúÿÿÿÿ
+qpython:S117L"URename this local variable "E_un" to match the regular expression ^[_a-z][a-z0-9_]*$.(ÚİŠèşÿÿÿÿ
+qpython:S117K"ZRename this local variable "E_un_path" to match the regular expression ^[_a-z][a-z0-9_]*$.(Ÿè•š
+spython:S117M"\Rename this local variable "E_un_tensor" to match the regular expression ^[_a-z][a-z0-9_]*$.(Ç×ÚÙ
+wpython:S117h"YRename this local variable "P_tensor" to match the regular expression ^[_a-z][a-z0-9_]*$.(òÛçƒ8à™ÌêÀ/
+spython:S1173"\Rename this local variable "transform_A" to match the regular expression ^[_a-z][a-z0-9_]*$.(ÕùÎ‡
+spython:S117;"\Rename this local variable "transform_B" to match the regular expression ^[_a-z][a-z0-9_]*$.(èØÏÇ
+Ipython:S1481U"%Remove the unused local variable "i".(šîùÿÿÿÿ8á™ÌêÀ/

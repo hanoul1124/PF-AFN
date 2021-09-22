@@ -1,0 +1,9 @@
+
+python:S1192‰"_Define a constant instead of duplicating this literal 'update learning rate: %f -> %f' 4 times.(ªç¯8çÃÈêÀ/
+cpython:S1542"LRename function "TVLoss" to match the regular expression ^[a-z_][a-z0-9_]*$.(ºß
+Cpython:S1481f"%Remove the unused local variable "i".(ßŒ¥8ëÃÈêÀ/
+|python:S5717Z"]Change this default value to "None" and initialize this parameter inside the function/method.(ôÌ­í8îÃÈêÀ/
+‚python:S117„"^Rename this local variable "netMain_layer" to match the regular expression ^[_a-z][a-z0-9_]*$.(ˆëÈùÿÿÿÿ8ğÃÈêÀ/
+„python:S117"`Rename this local variable "netRefine_layer" to match the regular expression ^[_a-z][a-z0-9_]*$.(Å†íĞøÿÿÿÿ8ñÃÈêÀ/
+Jpython:S1481ƒ"%Remove the unused local variable "i".(‰àÎğüÿÿÿÿ8óÃÈêÀ/
+~python:S117Æ"_Rename this local variable "tenCorrelation" to match the regular expression ^[_a-z][a-z0-9_]*$.(÷ãØ¿8ôÃÈêÀ/

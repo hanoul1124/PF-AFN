@@ -3,8 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from options.train_options import TrainOptions
-from .correlation import correlation # the custom cost volume layer
+from .correlation import correlation  # the custom cost volume layer
+
 opt = TrainOptions().parse()
+
 
 def apply_offset(offset):
     sizes = list(offset.size()[2:])
@@ -12,10 +14,10 @@ def apply_offset(offset):
     grid_list = reversed(grid_list)
     # apply offset
     grid_list = [grid.float().unsqueeze(0) + offset[:, dim, ...]
-        for dim, grid in enumerate(grid_list)]
+                 for dim, grid in enumerate(grid_list)]
     # normalize
     grid_list = [grid / ((size - 1.0) / 2.0) - 1.0
-        for grid, size in zip(grid_list, reversed(sizes))] 
+                 for grid, size in zip(grid_list, reversed(sizes))]
 
     return torch.stack(grid_list, dim=-1)
 
@@ -38,7 +40,7 @@ class ResBlock(nn.Module):
             nn.BatchNorm2d(in_channels),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, bias=False)
-            )
+        )
 
     def forward(self, x):
         return self.block(x) + x
@@ -47,19 +49,18 @@ class ResBlock(nn.Module):
 class DownSample(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DownSample, self).__init__()
-        self.block=  nn.Sequential(
+        self.block = nn.Sequential(
             nn.BatchNorm2d(in_channels),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1, bias=False)
-            )
+        )
 
     def forward(self, x):
         return self.block(x)
 
 
-
 class FeatureEncoder(nn.Module):
-    def __init__(self, in_channels, chns=[64,128,256,256,256]):
+    def __init__(self, in_channels, chns=[64, 128, 256, 256, 256]):
         # in_channels = 3 for images, and is larger (e.g., 17+1+1) for agnositc representation
         super(FeatureEncoder, self).__init__()
         self.encoders = []
@@ -69,14 +70,13 @@ class FeatureEncoder(nn.Module):
                                         ResBlock(out_chns),
                                         ResBlock(out_chns))
             else:
-                encoder = nn.Sequential(DownSample(chns[i-1], out_chns),
-                                         ResBlock(out_chns),
-                                         ResBlock(out_chns))
-            
+                encoder = nn.Sequential(DownSample(chns[i - 1], out_chns),
+                                        ResBlock(out_chns),
+                                        ResBlock(out_chns))
+
             self.encoders.append(encoder)
 
         self.encoders = nn.ModuleList(self.encoders)
-
 
     def forward(self, x):
         encoder_features = []
@@ -85,12 +85,13 @@ class FeatureEncoder(nn.Module):
             encoder_features.append(x)
         return encoder_features
 
+
 class RefinePyramid(nn.Module):
-    def __init__(self, chns=[64,128,256,256,256], fpn_dim=256):
+    def __init__(self, chns=[64, 128, 256, 256, 256], fpn_dim=256):
         super(RefinePyramid, self).__init__()
         self.chns = chns
 
-        # adaptive 
+        # adaptive
         self.adaptive = []
         for in_chns in list(reversed(chns)):
             adaptive_layer = nn.Conv2d(in_chns, fpn_dim, kernel_size=1)
@@ -105,7 +106,7 @@ class RefinePyramid(nn.Module):
 
     def forward(self, x):
         conv_ftr_list = x
-        
+
         feature_list = []
         last_feature = None
         for i, conv_ftr in enumerate(list(reversed(conv_ftr_list))):
@@ -153,7 +154,6 @@ class AFlowNet(nn.Module):
         self.netMain = nn.ModuleList(self.netMain)
         self.netRefine = nn.ModuleList(self.netRefine)
 
-
     def forward(self, x, x_edge, x_warps, x_conds, warp_feature=True):
         last_flow = None
         last_flow_all = []
@@ -181,53 +181,56 @@ class AFlowNet(nn.Module):
         weight_array[:, :, 0, 2] = filter_diag1
         weight_array[:, :, 0, 3] = filter_diag2
 
-        weight_array = torch.cuda.FloatTensor(weight_array).permute(3,2,0,1)
+        weight_array = torch.cuda.FloatTensor(weight_array).permute(3, 2, 0, 1)
         self.weight = nn.Parameter(data=weight_array, requires_grad=False)
 
         for i in range(len(x_warps)):
-              x_warp = x_warps[len(x_warps) - 1 - i]
-              x_cond = x_conds[len(x_warps) - 1 - i]
-              cond_fea_all.append(x_cond)
+            x_warp = x_warps[len(x_warps) - 1 - i]
+            x_cond = x_conds[len(x_warps) - 1 - i]
+            cond_fea_all.append(x_cond)
 
-              if last_flow is not None and warp_feature:
-                  x_warp_after = F.grid_sample(x_warp, last_flow.detach().permute(0, 2, 3, 1),
-                       mode='bilinear', padding_mode='border')
-              else:
-                  x_warp_after = x_warp
+            if last_flow is not None and warp_feature:
+                x_warp_after = F.grid_sample(x_warp, last_flow.detach().permute(0, 2, 3, 1),
+                                             mode='bilinear', padding_mode='border')
+            else:
+                x_warp_after = x_warp
 
-              tenCorrelation = F.leaky_relu(input=correlation.FunctionCorrelation(tenFirst=x_warp_after, tenSecond=x_cond, intStride=1), negative_slope=0.1, inplace=False)
-              flow = self.netMain[i](tenCorrelation)
-              delta_list.append(flow)
-              flow = apply_offset(flow)
-              if last_flow is not None:
-                  flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border')
-              else:
-                  flow = flow.permute(0, 3, 1, 2)
+            tenCorrelation = F.leaky_relu(
+                input=correlation.FunctionCorrelation(tenFirst=x_warp_after, tenSecond=x_cond, intStride=1),
+                negative_slope=0.1, inplace=False)
+            flow = self.netMain[i](tenCorrelation)
+            delta_list.append(flow)
+            flow = apply_offset(flow)
+            if last_flow is not None:
+                flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border')
+            else:
+                flow = flow.permute(0, 3, 1, 2)
 
-              last_flow = flow
-              x_warp = F.grid_sample(x_warp, flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border')
-              concat = torch.cat([x_warp,x_cond],1)
-              flow = self.netRefine[i](concat)
-              delta_list.append(flow)
-              flow = apply_offset(flow)
-              flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border')
+            last_flow = flow
+            x_warp = F.grid_sample(x_warp, flow.permute(0, 2, 3, 1), mode='bilinear', padding_mode='border')
+            concat = torch.cat([x_warp, x_cond], 1)
+            flow = self.netRefine[i](concat)
+            delta_list.append(flow)
+            flow = apply_offset(flow)
+            flow = F.grid_sample(last_flow, flow, mode='bilinear', padding_mode='border')
 
-              last_flow = F.interpolate(flow, scale_factor=2, mode='bilinear')
-              last_flow_all.append(last_flow)
-              cur_x = F.interpolate(x, scale_factor=0.5**(len(x_warps)-1-i), mode='bilinear')
-              cur_x_warp = F.grid_sample(cur_x, last_flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='border')
-              x_all.append(cur_x_warp)
-              cur_x_edge = F.interpolate(x_edge, scale_factor=0.5**(len(x_warps)-1-i), mode='bilinear')
-              cur_x_warp_edge = F.grid_sample(cur_x_edge, last_flow.permute(0, 2, 3, 1),mode='bilinear', padding_mode='zeros')
-              x_edge_all.append(cur_x_warp_edge)
-              flow_x,flow_y = torch.split(last_flow,1,dim=1)
-              delta_x = F.conv2d(flow_x, self.weight)
-              delta_y = F.conv2d(flow_y,self.weight)
-              delta_x_all.append(delta_x)
-              delta_y_all.append(delta_y)
+            last_flow = F.interpolate(flow, scale_factor=2, mode='bilinear')
+            last_flow_all.append(last_flow)
+            cur_x = F.interpolate(x, scale_factor=0.5 ** (len(x_warps) - 1 - i), mode='bilinear')
+            cur_x_warp = F.grid_sample(cur_x, last_flow.permute(0, 2, 3, 1), mode='bilinear', padding_mode='border')
+            x_all.append(cur_x_warp)
+            cur_x_edge = F.interpolate(x_edge, scale_factor=0.5 ** (len(x_warps) - 1 - i), mode='bilinear')
+            cur_x_warp_edge = F.grid_sample(cur_x_edge, last_flow.permute(0, 2, 3, 1), mode='bilinear',
+                                            padding_mode='zeros')
+            x_edge_all.append(cur_x_warp_edge)
+            flow_x, flow_y = torch.split(last_flow, 1, dim=1)
+            delta_x = F.conv2d(flow_x, self.weight)
+            delta_y = F.conv2d(flow_y, self.weight)
+            delta_x_all.append(delta_x)
+            delta_y_all.append(delta_y)
 
         x_warp = F.grid_sample(x, last_flow.permute(0, 2, 3, 1),
-                     mode='bilinear', padding_mode='border')
+                               mode='bilinear', padding_mode='border')
         return x_warp, last_flow, cond_fea_all, last_flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all
 
 
@@ -235,25 +238,25 @@ class AFWM(nn.Module):
 
     def __init__(self, opt, input_nc):
         super(AFWM, self).__init__()
-        num_filters = [64,128,256,256,256]
-        self.image_features = FeatureEncoder(3, num_filters) 
+        num_filters = [64, 128, 256, 256, 256]
+        self.image_features = FeatureEncoder(3, num_filters)
         self.cond_features = FeatureEncoder(input_nc, num_filters)
         self.image_FPN = RefinePyramid(num_filters)
         self.cond_FPN = RefinePyramid(num_filters)
         self.aflow_net = AFlowNet(len(num_filters))
         self.old_lr = opt.lr
-        self.old_lr_warp = opt.lr*0.2
+        self.old_lr_warp = opt.lr * 0.2
 
     def forward(self, cond_input, image_input, image_edge):
-        cond_pyramids = self.cond_FPN(self.cond_features(cond_input)) # maybe use nn.Sequential
+        cond_pyramids = self.cond_FPN(self.cond_features(cond_input))  # maybe use nn.Sequential
         image_pyramids = self.image_FPN(self.image_features(image_input))
 
-        x_warp, last_flow, last_flow_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all = self.aflow_net(image_input, image_edge, image_pyramids, cond_pyramids)
+        x_warp, last_flow, last_flow_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all = self.aflow_net(
+            image_input, image_edge, image_pyramids, cond_pyramids)
 
         return x_warp, last_flow, last_flow_all, flow_all, delta_list, x_all, x_edge_all, delta_x_all, delta_y_all
 
-
-    def update_learning_rate(self,optimizer):
+    def update_learning_rate(self, optimizer):
         lrd = opt.lr / opt.niter_decay
         lr = self.old_lr - lrd
         for param_group in optimizer.param_groups:
@@ -262,7 +265,7 @@ class AFWM(nn.Module):
             print('update learning rate: %f -> %f' % (self.old_lr, lr))
         self.old_lr = lr
 
-    def update_learning_rate_warp(self,optimizer):
+    def update_learning_rate_warp(self, optimizer):
         lrd = 0.2 * opt.lr / opt.niter_decay
         lr = self.old_lr_warp - lrd
         for param_group in optimizer.param_groups:
@@ -271,3 +274,23 @@ class AFWM(nn.Module):
             print('update learning rate: %f -> %f' % (self.old_lr_warp, lr))
         self.old_lr_warp = lr
 
+    ## 함수 2개 추가
+    def continue_update_learning_rate(self, optimizer):
+        self.old_lr = optimizer.param_groups[0]['lr']
+        lrd = opt.lr / opt.niter_decay
+        lr = self.old_lr - lrd
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
+        if opt.verbose:
+            print('update learning rate: %f -> %f' % (self.old_lr, lr))
+        self.old_lr = lr
+
+    def continue_update_learning_rate_warp(self, optimizer):
+        self.old_lr_warp = optimizer.param_groups[0]['lr']
+        lrd = 0.2 * opt.lr / opt.niter_decay
+        lr = self.old_lr_warp - lrd
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
+        if opt.verbose:
+            print('update learning rate: %f -> %f' % (self.old_lr_warp, lr))
+        self.old_lr_warp = lr
